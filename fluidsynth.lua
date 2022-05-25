@@ -9,7 +9,6 @@ local fluidsynth = {}
 function fluidsynth:init()
   fluidsynth.handle = io.popen('fluidsynth -s -g 3 -d -p lovesynth  -m coremidi', 'r+')
   fluidsynth.count = 0
-  -- todo: I should connect midi keyboard directly, somehow here
   -- todo: translate options-table for init
 end
 
@@ -34,5 +33,10 @@ function fluidsynth:load(filename)
   fluidsynth.count = fluidsynth.count + 1
   fluidsynth:cmd({'load', filename })
 end
+
+function fluidsynth:set(name, value)
+  fluidsynth:cmd({'set', name, value })
+end
+
 
 return fluidsynth

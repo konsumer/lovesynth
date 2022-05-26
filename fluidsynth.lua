@@ -1,42 +1,32 @@
 -- manage fluidsynth in path
 
+local socket = require("socket")
+
 local fluidsynth = {}
 
 -- TODO: do midi splits: https://www.fluidsynth.org/api/MIDIRouter.html
 
-
+local tcp
 
 function fluidsynth:init()
-  fluidsynth.handle = io.popen('fluidsynth -s -g 3 -d -p lovesynth  -m coremidi', 'r+')
-  fluidsynth.count = 0
-  -- todo: translate options-table for init
+  local t = love.thread.newThread( [[
+    local command = ...
+    os.execute(command)
+  ]])
+  t:start('fluidsynth -q -s -g 1 -d -p lovesynth -o "midi.autoconnect=1" -o "shell.port=31337" ')
+  tcp = assert(socket.tcp())
 end
 
 function fluidsynth:cmd(c)
-  fluidsynth.handle:write(table.concat(c, ' ') .. '\n')
+  print('COMMAND: ' .. c)
+  tcp:connect('localhost', 31337)
+  tcp:send(c .. '\n')
+  tcp:close()
 end
 
 function fluidsynth:close()
-  fluidsynth:cmd({'quit'})
-  fluidsynth.handle:close()
+  tcp:close()
+  io.popen('killall -9 fluidsynth')
 end
-
-function fluidsynth:noteon(channel, key, velocity)
-  fluidsynth:cmd({'noteon', channel, key, velocity})
-end
-
-function fluidsynth:noteoff(channel, key)
-  fluidsynth:cmd({'noteoff', channel, key })
-end
-
-function fluidsynth:load(filename)
-  fluidsynth.count = fluidsynth.count + 1
-  fluidsynth:cmd({'load', filename })
-end
-
-function fluidsynth:set(name, value)
-  fluidsynth:cmd({'set', name, value })
-end
-
 
 return fluidsynth
